@@ -89,7 +89,3 @@ From the menu you can choose either:
 - The tester can automatically look for default filenames such as `spritesheet.png`, `sprite.png`, and `test.png` in the project folder.
 - For best results, use images that are similar in size when generating a new spritesheet.
 - This project is intended as a lightweight local tool rather than a packaged web app.
-
-## GitHub upload
-
-This repository is ready to be pushed to GitHub. The project is set up with a Python-friendly `.gitignore` to avoid committing local dependencies, build artifacts, and temporary files.
