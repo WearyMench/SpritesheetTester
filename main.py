@@ -1,6 +1,7 @@
 import pygame
 import sys
 import os
+from ui_theme import BG, SURFACE, TEXT, MUTED, ACCENT, BORDER, font, text, rounded_panel, button, configure_window
 
 # Import tools
 from spritesheet_creator import SpritesheetCreator
@@ -13,9 +14,12 @@ class MainMenu:
         self.height = height
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption("Spritesheet Tools")
+        configure_window()
         self.clock = pygame.time.Clock()
-        self.font_title = pygame.font.Font(None, 74)
-        self.font_button = pygame.font.Font(None, 50)
+        self.font_title = font(48, True)
+        self.font_subtitle = font(19)
+        self.font_button = font(22, True)
+        self.font_small = font(14)
         
         # Colors
         self.BLACK = (0, 0, 0)
@@ -26,9 +30,9 @@ class MainMenu:
         
         # Button definitions
         self.buttons = {
-            "creator": pygame.Rect(width/2 - 200, height/2 - 100, 400, 80),
-            "tester": pygame.Rect(width/2 - 200, height/2 + 0, 400, 80),
-            "quit": pygame.Rect(width/2 - 200, height/2 + 100, 400, 80)
+            "creator": pygame.Rect(width/2 - 230, height/2 - 40, 460, 70),
+            "tester": pygame.Rect(width/2 - 230, height/2 + 48, 460, 70),
+            "quit": pygame.Rect(width/2 - 230, height/2 + 148, 460, 50)
         }
         
     def draw_text(self, text, font, color, surface, x, y, center=True):
@@ -41,25 +45,18 @@ class MainMenu:
         surface.blit(textobj, textrect)
 
     def draw_menu(self):
-        self.screen.fill(self.BLACK)
-        
-        # Title
-        self.draw_text("Spritesheet Tools", self.font_title, self.WHITE, self.screen, self.width/2, self.height/4)
-        
-        # Buttons
+        self.screen.fill(BG)
+        text(self.screen, "SPRITESHEET STUDIO", self.font_small, ACCENT, (self.width/2, 118), center=True)
+        text(self.screen, "Da vida a tus sprites", self.font_title, TEXT, (self.width/2, 170), center=True)
+        text(self.screen, "Crea, ajusta y previsualiza animaciones en un solo lugar.", self.font_subtitle, MUTED, (self.width/2, 214), center=True)
+        card = pygame.Rect(self.width/2 - 260, 272, 520, 360)
+        rounded_panel(self.screen, card, SURFACE, BORDER, 20)
         mouse_pos = pygame.mouse.get_pos()
-        
-        # Creator Button
-        pygame.draw.rect(self.screen, self.LIGHT_BLUE, self.buttons["creator"])
-        self.draw_text("Create Spritesheet", self.font_button, self.DARK_BLUE, self.screen, self.buttons["creator"].centerx, self.buttons["creator"].centery)
-
-        # Tester Button
-        pygame.draw.rect(self.screen, self.LIGHT_BLUE, self.buttons["tester"])
-        self.draw_text("Test Spritesheet", self.font_button, self.DARK_BLUE, self.screen, self.buttons["tester"].centerx, self.buttons["tester"].centery)
-
-        # Quit Button
-        pygame.draw.rect(self.screen, self.LIGHT_BLUE, self.buttons["quit"])
-        self.draw_text("Quit", self.font_button, self.DARK_BLUE, self.screen, self.buttons["quit"].centerx, self.buttons["quit"].centery)
+        text(self.screen, "¿Qué quieres hacer?", font(18, True), TEXT, (self.width/2 - 230, 298))
+        button(self.screen, self.buttons["creator"], "Crear spritesheet", self.font_button, mouse_pos, primary=True)
+        button(self.screen, self.buttons["tester"], "Probar una animación", self.font_button, mouse_pos)
+        button(self.screen, self.buttons["quit"], "Salir", font(17), mouse_pos)
+        text(self.screen, "También puedes usar el teclado dentro de cada herramienta", self.font_small, MUTED, (self.width/2, 676), center=True)
         
         pygame.display.flip()
 
@@ -117,4 +114,4 @@ if __name__ == "__main__":
         
         else: # Quit
             pygame.quit()
-            sys.exit() 
+            sys.exit()

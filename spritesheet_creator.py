@@ -4,6 +4,9 @@ import os
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog
 from pathlib import Path
+from ui_theme import (BG, SURFACE, TEXT, MUTED, ACCENT, SUCCESS, DANGER, BORDER,
+                      font, text, rounded_panel, checkerboard, button, toggle_button, stat,
+                      configure_window)
 
 class SpritesheetCreator:
     def __init__(self):
@@ -12,9 +15,12 @@ class SpritesheetCreator:
         self.height = 800
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption("Spritesheet Creator")
+        configure_window()
         self.clock = pygame.time.Clock()
-        self.font = pygame.font.Font(None, 24)
-        self.small_font = pygame.font.Font(None, 18)
+        self.font = font(22, True)
+        self.small_font = font(14)
+        self.tiny_font = font(12)
+        self.button_font = font(15, True)
         
         # Initialize tkinter for file dialogs
         self.tk_root = tk.Tk()
@@ -39,6 +45,7 @@ class SpritesheetCreator:
         
         # Preview properties
         self.show_grid = True
+        self.buttons = {}
         
         # Colors
         self.BLACK = (0, 0, 0)
@@ -276,93 +283,45 @@ class SpritesheetCreator:
 
     def draw_ui(self):
         """Draw the user interface"""
-        # Background for UI
-        ui_rect = pygame.Rect(self.width - 380, 0, 380, self.height)
-        pygame.draw.rect(self.screen, self.GRAY, ui_rect)
-        pygame.draw.rect(self.screen, self.WHITE, ui_rect, 2)
-        
-        y_offset = 20
-        
-        # Title
-        title = self.font.render("Spritesheet Creator", True, self.BLACK)
-        self.screen.blit(title, (self.width - 370, y_offset))
-        y_offset += 40
-        
-        # Image count
-        count_text = self.small_font.render(f"Images loaded: {len(self.images)}", True, self.BLACK)
-        self.screen.blit(count_text, (self.width - 370, y_offset))
-        y_offset += 25
-        
-        # Grid info
-        if self.images:
-            grid_text = self.small_font.render(f"Grid: {self.columns}x{self.rows}", True, self.BLACK)
-            self.screen.blit(grid_text, (self.width - 370, y_offset))
-            y_offset += 25
-            
-            frame_text = self.small_font.render(f"Frame size: {self.frame_width}x{self.frame_height}", True, self.BLACK)
-            self.screen.blit(frame_text, (self.width - 370, y_offset))
-            y_offset += 25
-            
-            total_text = self.small_font.render(f"Total frames: {self.columns * self.rows}", True, self.BLACK)
-            self.screen.blit(total_text, (self.width - 370, y_offset))
-            y_offset += 25
+        panel = pygame.Rect(self.width - 380, 0, 380, self.height)
+        pygame.draw.rect(self.screen, SURFACE, panel)
+        pygame.draw.line(self.screen, BORDER, panel.topleft, panel.bottomleft)
+        x, mouse = panel.x + 24, pygame.mouse.get_pos()
+        text(self.screen, "CREADOR", self.tiny_font, ACCENT, (x, 24))
+        text(self.screen, "Construye tu hoja", self.font, TEXT, (x, 44))
+        text(self.screen, "Combina cuadros y exporta un PNG.", self.small_font, MUTED, (x, 76))
 
-            # --- RESIZE SECTION ---
-            resize_title = self.font.render("Output Resizing:", True, self.BLACK)
-            self.screen.blit(resize_title, (self.width - 370, y_offset))
-            y_offset += 30
+        self.buttons = {
+            "browse": pygame.Rect(x, 112, 332, 46), "grid": pygame.Rect(x, 292, 158, 40),
+            "resize": pygame.Rect(x + 174, 292, 158, 40), "lock": pygame.Rect(x, 342, 158, 40),
+            "reset": pygame.Rect(x + 174, 342, 158, 40), "save": pygame.Rect(x, 410, 332, 46),
+            "test": pygame.Rect(x, 466, 332, 46), "clear": pygame.Rect(x, 530, 158, 38),
+            "back": pygame.Rect(x + 174, 530, 158, 38)
+        }
+        button(self.screen, self.buttons["browse"], "Seleccionar imágenes", self.button_font, mouse, primary=not self.images)
 
-            # Display output dimensions
-            output_dim_text = self.small_font.render(f"Size: {self.output_width}x{self.output_height}", True, self.BLACK)
-            self.screen.blit(output_dim_text, (self.width - 370, y_offset))
-            y_offset += 25
-
-            # Aspect ratio status
-            aspect_status = "Locked" if self.aspect_ratio_locked else "Unlocked"
-            aspect_text = self.small_font.render(f"Aspect Ratio: {aspect_status}", True, self.BLACK)
-            self.screen.blit(aspect_text, (self.width - 370, y_offset))
-            y_offset += 40
-        
-        # Controls
-        controls_title = self.font.render("Controls:", True, self.BLACK)
-        self.screen.blit(controls_title, (self.width - 370, y_offset))
-        y_offset += 30
-        
-        # Control options
-        controls = [
-            "B - Browse images",
-            "G - Set grid size",
-            "R - Resize output",
-            "L - Lock/Unlock aspect ratio",
-            "X - Reset size",
-            "S - Save spritesheet",
-            "T - Test spritesheet",
-            "C - Clear images",
-            "ESC - Quit"
-        ]
-        
-        for control in controls:
-            control_text = self.small_font.render(control, True, self.BLACK)
-            self.screen.blit(control_text, (self.width - 370, y_offset))
-            y_offset += 20
-        
-        y_offset += 20
-        
-        # Instructions
-        instructions = [
-            "1. Press B to select images",
-            "2. Adjust grid size if needed",
-            "3. Press R to resize output",
-            "4. Press L to lock/unlock aspect ratio",
-            "5. Press X to reset size",
-            "6. Press S to save spritesheet",
-            "7. Press T to test animation"
-        ]
-        
-        for instruction in instructions:
-            inst_text = self.small_font.render(instruction, True, self.BLACK)
-            self.screen.blit(inst_text, (self.width - 370, y_offset))
-            y_offset += 20
+        info = pygame.Rect(x, 176, 332, 92)
+        rounded_panel(self.screen, info, BG, BORDER, 12)
+        stat(self.screen, x+16, 190, "Cuadros", str(len(self.images)), self.tiny_font, self.font)
+        stat(self.screen, x+112, 190, "Cuadrícula", f"{self.columns} x {self.rows}" if self.images else "—", self.tiny_font, self.font)
+        stat(self.screen, x+226, 190, "Salida", f"{self.output_width}×{self.output_height}" if self.images else "—", self.tiny_font, font(16, True))
+        enabled = bool(self.images)
+        button(self.screen, self.buttons["grid"], "Cuadrícula", self.button_font, mouse, enabled=enabled)
+        button(self.screen, self.buttons["resize"], "Redimensionar", self.button_font, mouse, enabled=enabled)
+        toggle_button(
+            self.screen, self.buttons["lock"], "Proporción", self.button_font,
+            self.tiny_font, mouse, self.aspect_ratio_locked, enabled
+        )
+        button(self.screen, self.buttons["reset"], "Restablecer", self.button_font, mouse, enabled=enabled)
+        button(self.screen, self.buttons["save"], "Guardar PNG", self.button_font, mouse, primary=enabled, enabled=enabled)
+        button(self.screen, self.buttons["test"], "Probar animación", self.button_font, mouse, enabled=enabled)
+        button(self.screen, self.buttons["clear"], "Limpiar", self.button_font, mouse, enabled=enabled)
+        button(self.screen, self.buttons["back"], "Volver", self.button_font, mouse)
+        text(self.screen, "Flujo recomendado", self.small_font, TEXT, (x, 604))
+        text(self.screen, "1  Selecciona cuadros", self.small_font, MUTED, (x, 632))
+        text(self.screen, "2  Revisa la cuadrícula y el tamaño", self.small_font, MUTED, (x, 656))
+        text(self.screen, "3  Guarda o prueba la animación", self.small_font, MUTED, (x, 680))
+        text(self.screen, "Atajos: B abrir · S guardar · T probar · Esc volver", self.tiny_font, MUTED, (x, 754))
     
     def draw_preview(self):
         """Draw the spritesheet preview"""
@@ -395,11 +354,12 @@ class SpritesheetCreator:
             if self.show_grid:
                 self.draw_grid(x, y, scale)
         else:
-            # Show placeholder
-            font = pygame.font.Font(None, 36)
-            text = font.render("No spritesheet preview", True, self.WHITE)
-            text_rect = text.get_rect(center=((self.width - 380) // 2, self.height // 2))
-            self.screen.blit(text, text_rect)
+            area = pygame.Rect(40, 80, self.width - 460, self.height - 160)
+            checkerboard(self.screen, area)
+            rounded_panel(self.screen, pygame.Rect(area.centerx-230, area.centery-85, 460, 170), SURFACE, BORDER, 18)
+            text(self.screen, "+", font(42), ACCENT, (area.centerx, area.centery-42), center=True)
+            text(self.screen, "Añade tus cuadros", font(24, True), TEXT, (area.centerx, area.centery+4), center=True)
+            text(self.screen, "Usa el botón Seleccionar imágenes o presiona B", self.small_font, MUTED, (area.centerx, area.centery+38), center=True)
     
     def draw_grid(self, offset_x, offset_y, scale):
         """Draw grid lines on the preview"""
@@ -460,6 +420,21 @@ class SpritesheetCreator:
                     self.preview_spritesheet = None
                     self.final_spritesheet = None
                     print("Images cleared")
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                pos = event.pos
+                if self.buttons.get("browse", pygame.Rect(0,0,0,0)).collidepoint(pos): self.browse_images()
+                elif self.buttons.get("grid", pygame.Rect(0,0,0,0)).collidepoint(pos) and self.images: self.set_grid_size()
+                elif self.buttons.get("resize", pygame.Rect(0,0,0,0)).collidepoint(pos) and self.images: self.prompt_for_output_size()
+                elif self.buttons.get("lock", pygame.Rect(0,0,0,0)).collidepoint(pos) and self.images: self.aspect_ratio_locked = not self.aspect_ratio_locked
+                elif self.buttons.get("reset", pygame.Rect(0,0,0,0)).collidepoint(pos) and self.images: self.reset_output_size()
+                elif self.buttons.get("save", pygame.Rect(0,0,0,0)).collidepoint(pos) and self.images: self.save_spritesheet()
+                elif self.buttons.get("test", pygame.Rect(0,0,0,0)).collidepoint(pos) and self.final_spritesheet:
+                    temp_dir = os.path.join(os.getcwd(), "temp"); os.makedirs(temp_dir, exist_ok=True)
+                    temp_path = os.path.join(temp_dir, "temp_spritesheet_for_testing.png")
+                    pygame.image.save(self.final_spritesheet, temp_path); return temp_path
+                elif self.buttons.get("clear", pygame.Rect(0,0,0,0)).collidepoint(pos) and self.images:
+                    self.images, self.image_paths, self.preview_spritesheet, self.final_spritesheet = [], [], None, None
+                elif self.buttons.get("back", pygame.Rect(0,0,0,0)).collidepoint(pos): return False
         
         return True
     
@@ -470,7 +445,7 @@ class SpritesheetCreator:
     
     def draw(self):
         """Draw everything to the screen"""
-        self.screen.fill(self.BLACK)
+        self.screen.fill(BG)
         
         # Draw preview
         self.draw_preview()
@@ -501,4 +476,4 @@ class SpritesheetCreator:
 
 if __name__ == "__main__":
     creator = SpritesheetCreator()
-    creator.run() 
+    creator.run()

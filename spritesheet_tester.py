@@ -4,6 +4,9 @@ import os
 from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox
+from ui_theme import (BG, SURFACE, TEXT, MUTED, ACCENT, SUCCESS, BORDER,
+                      font, text, rounded_panel, checkerboard, button, toggle_button, stat,
+                      configure_window)
 
 class SpritesheetTester:
     def __init__(self, width=1200, height=800):
@@ -12,9 +15,12 @@ class SpritesheetTester:
         self.height = height
         self.screen = pygame.display.set_mode((width, height))
         pygame.display.set_caption("Spritesheet Tester")
+        configure_window()
         self.clock = pygame.time.Clock()
-        self.font = pygame.font.Font(None, 24)
-        self.small_font = pygame.font.Font(None, 18)
+        self.font = font(22, True)
+        self.small_font = font(14)
+        self.tiny_font = font(12)
+        self.button_font = font(15, True)
         
         # Initialize tkinter for file dialog (hidden window)
         self.tk_root = tk.Tk()
@@ -34,7 +40,8 @@ class SpritesheetTester:
         self.current_frame = 0
         self.animation_speed = 100  # milliseconds per frame
         self.last_frame_time = 0
-        self.is_playing = True
+        # Unknown sheets start paused to avoid unexpected rapid flashing.
+        self.is_playing = False
         self.loop = True
         
         # UI properties
@@ -42,6 +49,7 @@ class SpritesheetTester:
         self.animation_scale_factor = 3.0
         self.show_grid = True
         self.show_info = True
+        self.buttons = {}
         
         # Colors
         self.BLACK = (0, 0, 0)
@@ -186,110 +194,41 @@ class SpritesheetTester:
     
     def draw_ui(self):
         """Draw the user interface"""
-        # Background for UI
-        ui_rect = pygame.Rect(self.width - 380, 0, 380, self.height)
-        pygame.draw.rect(self.screen, self.GRAY, ui_rect)
-        pygame.draw.rect(self.screen, self.WHITE, ui_rect, 2)
-        
-        y_offset = 20
-        
-        # Title
-        title = self.font.render("Spritesheet Tester", True, self.BLACK)
-        self.screen.blit(title, (self.width - 370, y_offset))
-        y_offset += 40
-        
-        # File info
-        if self.spritesheet_path:
-            filename = os.path.basename(self.spritesheet_path)
-            file_text = self.small_font.render(f"File: {filename}", True, self.BLACK)
-            self.screen.blit(file_text, (self.width - 370, y_offset))
-            y_offset += 25
-            
-            # Image dimensions
-            dim_text = self.small_font.render(f"Image: {self.spritesheet.get_width()}x{self.spritesheet.get_height()}", True, self.BLACK)
-            self.screen.blit(dim_text, (self.width - 370, y_offset))
-            y_offset += 25
-            
-            # Frame dimensions
-            frame_text = self.small_font.render(f"Frame: {self.frame_width}x{self.frame_height}", True, self.BLACK)
-            self.screen.blit(frame_text, (self.width - 370, y_offset))
-            y_offset += 25
-            
-            # Animation Scale factor
-            scale_text = self.small_font.render(f"Anim Scale: {self.animation_scale_factor:.2f}x", True, self.BLACK)
-            self.screen.blit(scale_text, (self.width - 370, y_offset))
-            y_offset += 40
-
-            # Spritesheet Thumbnail
-            if self.scaled_thumbnail_spritesheet:
-                thumb_x = self.width - 370
-                thumb_y = y_offset
-                self.screen.blit(self.scaled_thumbnail_spritesheet, (thumb_x, thumb_y))
-                
-                if self.show_grid:
-                    self.draw_grid(thumb_x, thumb_y)
-                
-                self.draw_current_frame_highlight(thumb_x, thumb_y)
-                
-                y_offset += self.scaled_thumbnail_spritesheet.get_height() + 20
-        
-        # Controls
-        controls_title = self.font.render("Controls:", True, self.BLACK)
-        self.screen.blit(controls_title, (self.width - 370, y_offset))
-        y_offset += 30
-        
-        # Columns and rows
-        col_text = self.small_font.render(f"Columns: {self.columns} (Q/E)", True, self.BLACK)
-        self.screen.blit(col_text, (self.width - 370, y_offset))
-        y_offset += 20
-        
-        row_text = self.small_font.render(f"Rows: {self.rows} (A/D)", True, self.BLACK)
-        self.screen.blit(row_text, (self.width - 370, y_offset))
-        y_offset += 20
-        
-        # Animation speed
-        speed_text = self.small_font.render(f"Speed: {self.animation_speed}ms (Z/C)", True, self.BLACK)
-        self.screen.blit(speed_text, (self.width - 370, y_offset))
-        y_offset += 20
-        
-        # Current frame
-        frame_text = self.small_font.render(f"Frame: {self.current_frame + 1}/{self.total_frames}", True, self.BLACK)
-        self.screen.blit(frame_text, (self.width - 370, y_offset))
-        y_offset += 20
-        
-        # Play/pause
-        play_text = self.small_font.render(f"Playing: {'Yes' if self.is_playing else 'No'} (Space)", True, self.BLACK)
-        self.screen.blit(play_text, (self.width - 370, y_offset))
-        y_offset += 20
-        
-        # Loop
-        loop_text = self.small_font.render(f"Loop: {'Yes' if self.loop else 'No'} (L)", True, self.BLACK)
-        self.screen.blit(loop_text, (self.width - 370, y_offset))
-        y_offset += 20
-        
-        # Grid toggle
-        grid_text = self.small_font.render(f"Grid: {'On' if self.show_grid else 'Off'} (G)", True, self.BLACK)
-        self.screen.blit(grid_text, (self.width - 370, y_offset))
-        y_offset += 40
-        
-        # Instructions
-        instructions = [
-            "SPACE - Play/Pause",
-            "LEFT/RIGHT - Previous/Next frame",
-            "Q/E - Change columns",
-            "A/D - Change rows",
-            "Z/C - Change speed",
-            "L - Toggle loop",
-            "G - Toggle grid",
-            "R - Reset frame",
-            "B - Browse spritesheet",
-            "ESC - Quit"
-        ]
-        
-        for instruction in instructions:
-            inst_text = self.small_font.render(instruction, True, self.BLACK)
-            self.screen.blit(inst_text, (self.width - 370, y_offset))
-            y_offset += 20
+        panel = pygame.Rect(self.width - 380, 0, 380, self.height)
+        pygame.draw.rect(self.screen, SURFACE, panel)
+        pygame.draw.line(self.screen, BORDER, panel.topleft, panel.bottomleft)
+        x, mouse = panel.x + 24, pygame.mouse.get_pos()
+        text(self.screen, "PROBADOR", self.tiny_font, ACCENT, (x, 24))
+        text(self.screen, "Previsualiza el movimiento", self.font, TEXT, (x, 44))
+        name = os.path.basename(self.spritesheet_path) if self.spritesheet_path else "Ningún archivo seleccionado"
+        text(self.screen, name[:40], self.small_font, MUTED, (x, 78))
+        self.buttons = {"browse": pygame.Rect(x,108,332,42), "cols-":pygame.Rect(x,268,40,36), "cols+":pygame.Rect(x+126,268,40,36),
+          "rows-":pygame.Rect(x+174,268,40,36), "rows+":pygame.Rect(x+292,268,40,36), "slow":pygame.Rect(x,332,48,38),
+          "fast":pygame.Rect(x+284,332,48,38), "prev":pygame.Rect(x,404,72,44), "play":pygame.Rect(x+82,404,168,44),
+          "next":pygame.Rect(x+260,404,72,44), "loop":pygame.Rect(x,474,158,40), "grid":pygame.Rect(x+174,474,158,40),
+          "reset":pygame.Rect(x,530,158,38), "back":pygame.Rect(x+174,530,158,38)}
+        button(self.screen,self.buttons["browse"],"Abrir spritesheet",self.button_font,mouse,primary=not self.spritesheet)
+        info=pygame.Rect(x,168,332,76); rounded_panel(self.screen,info,BG,BORDER,12)
+        stat(self.screen,x+14,181,"Imagen",f"{self.spritesheet.get_width()}×{self.spritesheet.get_height()}" if self.spritesheet else "—",self.tiny_font,font(16,True))
+        stat(self.screen,x+126,181,"Cuadro",f"{self.frame_width}×{self.frame_height}" if self.spritesheet else "—",self.tiny_font,font(16,True))
+        stat(self.screen,x+236,181,"Actual",f"{self.current_frame+1}/{self.total_frames}" if self.spritesheet else "—",self.tiny_font,font(16,True))
+        enabled=bool(self.spritesheet)
+        text(self.screen,"COLUMNAS",self.tiny_font,MUTED,(x+83,257),center=True)
+        text(self.screen,str(self.columns),self.small_font,TEXT,(x+83,286),center=True)
+        text(self.screen,"FILAS",self.tiny_font,MUTED,(x+257,257),center=True)
+        text(self.screen,str(self.rows),self.small_font,TEXT,(x+257,286),center=True)
+        for key,label in (("cols-","−"),("cols+","+"),("rows-","−"),("rows+","+")): button(self.screen,self.buttons[key],label,self.button_font,mouse,enabled=enabled)
+        button(self.screen,self.buttons["slow"],"−",self.button_font,mouse,enabled=enabled); button(self.screen,self.buttons["fast"],"+",self.button_font,mouse,enabled=enabled)
+        text(self.screen,f"Velocidad  {self.animation_speed} ms/cuadro",self.small_font,TEXT,(x+166,351),center=True)
+        button(self.screen,self.buttons["prev"],"Anterior",self.tiny_font,mouse,enabled=enabled)
+        button(self.screen,self.buttons["play"],"Pausar" if self.is_playing else "Reproducir",self.button_font,mouse,primary=enabled,enabled=enabled)
+        button(self.screen,self.buttons["next"],"Siguiente",self.tiny_font,mouse,enabled=enabled)
+        toggle_button(self.screen,self.buttons["loop"],"Repetir",self.button_font,self.tiny_font,mouse,self.loop,enabled)
+        toggle_button(self.screen,self.buttons["grid"],"Cuadrícula",self.button_font,self.tiny_font,mouse,self.show_grid,enabled)
+        button(self.screen,self.buttons["reset"],"Reiniciar",self.button_font,mouse,enabled=enabled)
+        button(self.screen,self.buttons["back"],"Volver",self.button_font,mouse,enabled=True)
+        text(self.screen,"Atajos",self.small_font,TEXT,(x,612)); text(self.screen,"Espacio reproducir · ← → navegar",self.small_font,MUTED,(x,642))
+        text(self.screen,"Q/E columnas · A/D filas · Z/C velocidad",self.tiny_font,MUTED,(x,668)); text(self.screen,"B abrir · G cuadrícula · L repetir · Esc volver",self.tiny_font,MUTED,(x,692))
     
     def handle_input(self):
         """Handle keyboard input"""
@@ -330,6 +269,23 @@ class SpritesheetTester:
                     self.current_frame = 0
                 elif event.key == pygame.K_b:  # Browse spritesheet
                     self.browse_spritesheet()
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                p=event.pos; hit=lambda key:self.buttons.get(key,pygame.Rect(0,0,0,0)).collidepoint(p)
+                if hit("browse"): self.browse_spritesheet()
+                elif hit("back"): return False
+                elif self.spritesheet:
+                    if hit("cols-"): self.columns=max(1,self.columns-1); self.calculate_frame_dimensions()
+                    elif hit("cols+"): self.columns+=1; self.calculate_frame_dimensions()
+                    elif hit("rows-"): self.rows=max(1,self.rows-1); self.calculate_frame_dimensions()
+                    elif hit("rows+"): self.rows+=1; self.calculate_frame_dimensions()
+                    elif hit("slow"): self.animation_speed=max(10,self.animation_speed-10)
+                    elif hit("fast"): self.animation_speed+=10
+                    elif hit("prev"): self.current_frame=max(0,self.current_frame-1); self.is_playing=False
+                    elif hit("next"): self.current_frame=min(self.total_frames-1,self.current_frame+1); self.is_playing=False
+                    elif hit("play"): self.is_playing=not self.is_playing
+                    elif hit("loop"): self.loop=not self.loop
+                    elif hit("grid"): self.show_grid=not self.show_grid
+                    elif hit("reset"): self.current_frame=0
         
         return True
     
@@ -352,7 +308,7 @@ class SpritesheetTester:
     
     def draw(self):
         """Draw everything to the screen"""
-        self.screen.fill(self.BLACK)
+        self.screen.fill(BG)
         
         # Draw animated frame in main view
         if self.spritesheet:
@@ -362,18 +318,10 @@ class SpritesheetTester:
                 frame_rect = animated_frame.get_rect(center=(main_view_width / 2, self.height / 2))
                 self.screen.blit(animated_frame, frame_rect)
         else:
-            font = pygame.font.Font(None, 36)
-            small_font = pygame.font.Font(None, 24)
-            
-            # Main message
-            text = font.render("No spritesheet loaded", True, self.WHITE)
-            text_rect = text.get_rect(center=((self.width - 380) / 2, self.height / 2 - 30))
-            self.screen.blit(text, text_rect)
-            
-            # Instructions
-            instruction_text = small_font.render("Press B to browse for a spritesheet image", True, self.GRAY)
-            instruction_rect = instruction_text.get_rect(center=((self.width - 380) / 2, self.height / 2 + 10))
-            self.screen.blit(instruction_text, instruction_rect)
+            area=pygame.Rect(40,80,self.width-460,self.height-160); checkerboard(self.screen,area)
+            rounded_panel(self.screen,pygame.Rect(area.centerx-230,area.centery-75,460,150),SURFACE,BORDER,18)
+            text(self.screen,"Abre un spritesheet",font(24,True),TEXT,(area.centerx,area.centery-20),center=True)
+            text(self.screen,"Selecciona un PNG y configura sus filas y columnas",self.small_font,MUTED,(area.centerx,area.centery+18),center=True)
 
         # Draw UI
         self.draw_ui()
@@ -387,13 +335,8 @@ class SpritesheetTester:
         # If a specific spritesheet is passed, load it
         if spritesheet_path and os.path.exists(spritesheet_path):
             self.load_spritesheet(spritesheet_path)
-        else:
-            # Try to load a default spritesheet if available
-            default_paths = ["spritesheet.png", "sprite.png", "test.png"]
-            for path in default_paths:
-                if os.path.exists(path):
-                    self.load_spritesheet(path)
-                    break
+        # If no path was provided, remain empty until the user chooses a file.
+        # This avoids unexpectedly auto-playing a colorful demo spritesheet.
         
         if not self.spritesheet:
             self.calculate_and_scale_assets()
@@ -414,4 +357,4 @@ if __name__ == "__main__":
     # Ensure program receives focus on launch
     os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (100, 100)
     tester = SpritesheetTester()
-    tester.run() 
+    tester.run()
